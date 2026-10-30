@@ -161,17 +161,54 @@ hand to people.
 
 ## Each later release
 
-```sh
-npm run release -- <next version>
-```
+The first version must be uploaded by hand (step 2): that creates the item
+and its id. Every version after that ships from GitHub Actions.
 
-Then in the console: open the item, **Package → Upload new package**,
-upload the new zip, **Submit for review**. Everyone on the store copy
-updates automatically within a few hours of approval. The listing text
-needs no changes unless the behaviour changed.
+**Actions → Deploy → Run workflow**, type the next version (e.g. `0.3.1`),
+run. `.github/workflows/deploy.yml` sets the version in both manifests,
+builds, runs the smoke test, uploads the zip, submits it for review, then
+commits the bump to `main` and tags `v<version>`. It runs on Blacksmith
+runners. `ci.yml` builds and smoke-tests every push and pull request.
 
 Versions must go up and be one to four dot-separated integers (`0.4.0`,
 `1.0`, `1.0.0.1`). No `-beta`, no letters.
+
+Manual fallback, if Actions is unavailable: `npm run release -- <version>`,
+then in the console **Package → Upload new package**, upload the zip,
+**Submit for review**, and commit the version bump yourself.
+
+### How users get the update
+
+Nobody does anything. Chrome checks the store for updates to every
+installed extension every few hours and installs a new version on its own,
+silently. Expect most people on the new version within a day of approval;
+anyone in a hurry can press *Update* on `chrome://extensions` with
+Developer mode on. A new version that asks for *more permissions* is the
+exception: Chrome disables it until each user accepts the new permissions,
+so avoid adding permissions casually. Copies installed with *Load unpacked*
+never update.
+
+### Automated releases: one-time setup
+
+The workflow signs in to the Chrome Web Store API as a Google Cloud service
+account. Do this once, after the item exists:
+
+1. **Google Cloud project.** At https://console.cloud.google.com create (or
+   pick) a project, open *APIs & Services → Library*, find **Chrome Web
+   Store API** and enable it.
+2. **Service account.** *IAM & Admin → Service accounts → Create*. Any name
+   (`snap-deploy`); grant it no roles. Open it → *Keys → Add key → JSON*;
+   a key file downloads.
+3. **Link it to the store.** In the developer console, *Account*, add the
+   service account's email. One service account per publisher.
+4. **2-step verification** must be on for the Google account that owns the
+   listing, or publishing through the API is refused.
+5. **GitHub.** In `jd-ventures/snap` → *Settings → Secrets and variables →
+   Actions*:
+   - Secret `CWS_SERVICE_ACCOUNT_KEY`: the whole JSON key file. Then delete
+     the file from your machine.
+   - Variable `CWS_PUBLISHER_ID`: console → *Publisher → Settings*.
+   - Variable `CWS_EXTENSION_ID`: the 32-letter id on the item's page.
 
 ## Who owns what
 

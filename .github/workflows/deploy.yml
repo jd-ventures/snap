@@ -1,0 +1,98 @@
+# Ships a new version to the Chrome Web Store.
+#
+# Actions → Deploy → Run workflow → type the next version (e.g. 0.3.1).
+# It sets the version in both manifests, builds, smoke-tests, uploads the
+# zip, submits it for review, then commits the bump and tags v<version>.
+# Google reviews it (hours to ~3 days); once approved, every installed copy
+# updates itself.
+#
+# One-time setup is in HANDOFF.md, "Automated releases".
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Next version, higher than the live one (e.g. 0.3.1)
+        required: true
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    env:
+      VERSION: ${{ inputs.version }}
+      PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+      EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check inputs
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]] || { echo "::error::version must be 1–4 dot-separated integers, got $VERSION"; exit 1; }
+          [ -n "$PUBLISHER_ID" ] || { echo "::error::repo variable CWS_PUBLISHER_ID is not set"; exit 1; }
+          [ -n "$EXTENSION_ID" ] || { echo "::error::repo variable CWS_EXTENSION_ID is not set"; exit 1; }
+          git ls-remote --exit-code --tags origin "v$VERSION" >/dev/null && { echo "::error::tag v$VERSION already exists"; exit 1; } || true
+
+      - run: npm ci
+
+      - name: Install Chromium
+        run: |
+          npx playwright-core install --with-deps chromium
+          echo "CHROMIUM=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+
+      # Sets the version, builds, runs the smoke test (CHROMIUM is set), zips.
+      - run: npm run release -- "$VERSION"
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+
+      - name: Upload to the Chrome Web Store
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -T "release/snap-$VERSION.zip" \
+            "https://chromewebstore.googleapis.com/upload/v2/publishers/$PUBLISHER_ID/items/$EXTENSION_ID:upload" \
+            | tee upload.json
+          echo
+          state=$(jq -r '.uploadState // empty' upload.json)
+          [ "$state" != "FAILED" ] || { echo "::error::upload refused; see the response above"; exit 1; }
+
+      - name: Submit for review
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://chromewebstore.googleapis.com/v2/publishers/$PUBLISHER_ID/items/$EXTENSION_ID:publish"
+          echo
+
+      - name: Commit the version and tag it
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Release $VERSION"
+          git tag "v$VERSION"
+          git push origin HEAD "v$VERSION"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap-${{ inputs.version }}
+          path: release/snap-${{ inputs.version }}.zip
