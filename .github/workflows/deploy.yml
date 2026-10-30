@@ -92,7 +92,7 @@ jobs:
           git tag "v$VERSION"
           git push origin HEAD "v$VERSION"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: snap-${{ inputs.version }}
           path: release/snap-${{ inputs.version }}.zip
