@@ -178,8 +178,8 @@ Versions must go up and be one to four dot-separated integers (`0.4.0`,
 Fill in on handover:
 
 - Store owner account: ________
-- Privacy policy URL: ________
-- Source location: ________ (this folder)
+- Privacy policy URL: https://github.com/jd-ventures/snap/blob/main/store/privacy-policy.md
+- Source location: https://github.com/jd-ventures/snap
 - Listing link once live: ________
 
 The source is self-contained: `npm install && npm run release` from a fresh
