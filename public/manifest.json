@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Snap",
+  "version": "0.3.0",
+  "description": "Photograph the page, draw on it, copy it. Nothing leaves your machine.",
+  "action": {
+    "default_title": "Snap this page"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "clipboardWrite"
+  ],
+  "commands": {
+    "snap": {
+      "suggested_key": {
+        "default": "Shift+Alt+S"
+      },
+      "description": "Snap this page"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
+}

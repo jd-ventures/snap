@@ -1,0 +1,674 @@
+/* Snap — the surface's stylesheet.
+   A slice of artc's index.css: the tokens the surface reads (`--sp-*`,
+   `--space-*`, `--radius-*`, `--shadow-*`), the base button, the glyph lane,
+   the menu card, and the `.annotate-*` block verbatim. Anything the surface
+   reads at runtime via theme.ts (the four inks, paper, text, border, the two
+   faces) MUST stay defined on :root — Annotate.tsx and capture.ts name no
+   colour of their own. Inside a page, content.tsx rewrites `:root` to
+   `:host` for the shadow root. */
+
+:root {
+  --sp-blue: #0000ff;
+  --sp-blue-ink: #0000cc;
+  --sp-ink: #111111;
+  --sp-white: #ffffff;
+  --sp-offwhite: #fafafa;
+  --sp-grey-50: #f3f4f6;
+  --sp-grey-100: #e5e9ed;
+  --sp-red-text: #e00000;
+  --sp-annotate: #e00000;
+  --sp-green: #16a34a;
+  --sp-amber: #d97706;
+  --sp-purple: #7c3aed;
+  --sp-line: rgba(17, 17, 17, 0.06);
+  --sp-line-strong: rgba(0, 0, 0, 0.14);
+  --sp-body: #5a6673;
+  --sp-body-muted: #666f7a;
+
+  --sp-dark-bg: #161617;
+  --sp-dark-surface: #202121;
+  --sp-dark-paper: #0f0f10;
+  --sp-dark-text-muted: rgba(250, 250, 250, 0.78);
+  --sp-dark-text-subtle: rgba(250, 250, 250, 0.62);
+  --sp-dark-line: rgba(255, 255, 255, 0.1);
+  --sp-dark-line-strong: rgba(255, 255, 255, 0.22);
+  --sp-dark-inert: rgba(255, 255, 255, 0.14);
+  --sp-dark-red-text: #ff6b6b;
+  --sp-dark-amber: #f0a03c;
+  --sp-dark-purple: #a78bfa;
+
+  /* Semantic (light) */
+  --sp-bg: var(--sp-offwhite);
+  --sp-surface: var(--sp-grey-50);
+  --sp-paper: var(--sp-white);
+  --sp-text: var(--sp-ink);
+  --sp-text-muted: var(--sp-body);
+  --sp-text-subtle: var(--sp-body-muted);
+  --sp-border: var(--sp-line);
+  --sp-border-strong: var(--sp-line-strong);
+  --sp-focus: var(--sp-blue);
+  --sp-invert-bg: var(--sp-ink);
+  --sp-invert-fg: var(--sp-grey-50);
+  --sp-inert: var(--sp-grey-100);
+
+  /* Type. artc ships Helvetica Now Display and Spline Sans Mono; the
+     extension does not carry the fonts, so the fallbacks do the work. */
+  --sp-font-display: 'Helvetica Now Display', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --sp-font-mono: 'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --sp-track-label: 0.02em;
+  --text-xs: 11px;
+  --text-md: 13px;
+  --text-lg: 14px;
+  --text-xl: 16px;
+  --leading-body: 24px;
+  --leading-control: normal;
+
+  --radius-control: 6px;
+  --radius-surface: 12px;
+  --radius-mark: 2px;
+  --radius-circle: 50%;
+
+  --shadow-ink: 17 17 17;
+  --shadow-alpha-popover: 12%;
+  --shadow-popover: 0 8px 24px rgb(var(--shadow-ink) / var(--shadow-alpha-popover));
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  --geo-control-h: 32px;
+  --geo-mark-btn: 24px;
+  --geo-annotate-bar-h: calc(var(--geo-control-h) + var(--space-2) * 2 + 2px);
+  --z-capture: 75;
+  --z-toast: 90;
+  --z-diag: 95;
+
+  --sp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --sp-dur-fast: 160ms;
+  --sp-dur-enter: 200ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --sp-bg: var(--sp-dark-bg);
+    --sp-surface: var(--sp-dark-surface);
+    --sp-paper: var(--sp-dark-paper);
+    --sp-text: var(--sp-offwhite);
+    --sp-text-muted: var(--sp-dark-text-muted);
+    --sp-text-subtle: var(--sp-dark-text-subtle);
+    --sp-border: var(--sp-dark-line);
+    --sp-border-strong: var(--sp-dark-line-strong);
+    --sp-focus: var(--sp-white);
+    --sp-invert-bg: var(--sp-offwhite);
+    --sp-invert-fg: var(--sp-ink);
+    --sp-inert: var(--sp-dark-inert);
+    --sp-red-text: var(--sp-dark-red-text);
+    --sp-annotate: var(--sp-dark-red-text);
+    --sp-amber: var(--sp-dark-amber);
+    --sp-purple: var(--sp-dark-purple);
+    --shadow-ink: 0 0 0;
+    --shadow-alpha-popover: 40%;
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --sp-bg: var(--sp-dark-bg);
+  --sp-surface: var(--sp-dark-surface);
+  --sp-paper: var(--sp-dark-paper);
+  --sp-text: var(--sp-offwhite);
+  --sp-text-muted: var(--sp-dark-text-muted);
+  --sp-text-subtle: var(--sp-dark-text-subtle);
+  --sp-border: var(--sp-dark-line);
+  --sp-border-strong: var(--sp-dark-line-strong);
+  --sp-focus: var(--sp-white);
+  --sp-invert-bg: var(--sp-offwhite);
+  --sp-invert-fg: var(--sp-ink);
+  --sp-inert: var(--sp-dark-inert);
+  --sp-red-text: var(--sp-dark-red-text);
+  --sp-annotate: var(--sp-dark-red-text);
+  --sp-amber: var(--sp-dark-amber);
+  --sp-purple: var(--sp-dark-purple);
+  --shadow-ink: 0 0 0;
+  --shadow-alpha-popover: 40%;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--sp-bg);
+  color: var(--sp-text);
+  font-family: var(--sp-font-display);
+  font-size: var(--text-md);
+  overflow: hidden;
+}
+#root {
+  height: 100%;
+}
+
+/* ---- Buttons (artc's base rule, trimmed) ---- */
+button {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  white-space: nowrap;
+  font-family: var(--sp-font-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  letter-spacing: var(--sp-track-label);
+  line-height: var(--leading-control);
+  min-height: var(--geo-control-h);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--sp-border-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--sp-text);
+  cursor: pointer;
+  transition:
+    background var(--sp-dur-fast) var(--sp-ease),
+    color var(--sp-dur-fast) var(--sp-ease);
+}
+button:hover:not(:disabled) {
+  background: var(--sp-invert-bg);
+  color: var(--sp-invert-fg);
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+button:focus-visible {
+  outline: 1px solid var(--sp-focus);
+  outline-offset: 1px;
+}
+button.primary {
+  background: var(--sp-blue);
+  border-color: var(--sp-blue);
+  color: var(--sp-grey-50);
+}
+button.primary:hover:not(:disabled) {
+  background: var(--sp-blue-ink);
+  border-color: var(--sp-blue-ink);
+  color: var(--sp-grey-50);
+}
+button.small {
+  min-height: 0;
+  font-size: var(--text-md);
+  padding: var(--space-1) var(--space-2);
+}
+.empty button.small {
+  margin-left: var(--space-2);
+}
+
+/* ---- Hints: a small caption over the control on hover. ---- */
+[data-tip] {
+  position: relative;
+}
+[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--sp-invert-bg);
+  color: var(--sp-invert-fg);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ---- Mark buttons: a control whose face is a glyph. On the toolbar
+   (`.bar-btn`) they are the square bordered controls artc draws; inline
+   they are the bare mark. ---- */
+.mark-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--geo-mark-btn);
+  height: var(--geo-mark-btn);
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--sp-text-subtle);
+}
+.mark-btn:hover:not(:disabled) {
+  background: var(--sp-inert);
+  color: var(--sp-text);
+}
+.mark-btn.inline {
+  width: auto;
+  height: auto;
+}
+.mark-btn.inline:hover:not(:disabled) {
+  background: none;
+}
+.annotate-tools .mark-btn.bar-btn,
+.annotate-pick > .mark-btn.bar-btn {
+  width: auto;
+  min-width: var(--geo-control-h);
+  height: var(--geo-control-h);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--sp-border-strong);
+  color: var(--sp-text);
+}
+.annotate-tools .mark-btn.bar-btn:hover:not(:disabled),
+.annotate-tools .mark-btn.bar-btn.on {
+  background: var(--sp-invert-bg);
+  border-color: var(--sp-invert-bg);
+  color: var(--sp-invert-fg);
+}
+/* The swatch's button shows a colour, so its open state is a ground, not
+   the invert — restated here at the specificity the rule above set. */
+.annotate-tools .annotate-pick > .mark-btn.bar-btn.on,
+.annotate-tools .annotate-pick > .mark-btn.bar-btn:hover:not(:disabled) {
+  color: var(--sp-text);
+  background: var(--sp-surface);
+  border-color: var(--sp-border-strong);
+}
+
+/* ---- Glyphs ---- */
+.glyph {
+  flex: none;
+  display: block;
+  align-self: center;
+}
+
+/* ---- Menu card ---- */
+.menu-card {
+  padding: 0;
+  border: 1px solid var(--sp-border-strong);
+  border-radius: var(--radius-surface);
+  background: var(--sp-bg);
+  overflow: hidden;
+}
+
+/* ---- Toast ---- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--geo-annotate-bar-h) + var(--space-5) + var(--space-4));
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--sp-invert-bg);
+  color: var(--sp-invert-fg);
+  font-size: var(--text-md);
+  font-weight: 700;
+  pointer-events: none;
+}
+.empty {
+  margin: var(--space-5);
+  color: var(--sp-text-muted);
+}
+
+/* ---- The annotate surface (artc index.css, minus the session and
+   over-capture modal rules) ---- */
+.annotate {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-capture);
+  background: var(--sp-bg);
+}
+.annotate-flash {
+  position: absolute;
+  inset: 0;
+  background: var(--sp-white);
+  pointer-events: none;
+}
+.annotate-shot,
+.annotate-ink,
+.annotate-hand {
+  position: absolute;
+  touch-action: none;
+}
+.annotate-shot {
+  border: 1px solid var(--sp-border);
+}
+.annotate-hand {
+  cursor: crosshair;
+}
+.annotate-hand.noting {
+  cursor: text;
+}
+.annotate-hand:focus {
+  outline: none;
+}
+.annotate-dock {
+  position: absolute;
+  bottom: var(--space-4);
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  transition: transform var(--sp-dur-enter) var(--sp-ease);
+}
+.annotate-dock.tucked {
+  transform: translate(-50%, calc(var(--geo-annotate-bar-h) + var(--space-4)));
+}
+.annotate-dock.tucked .annotate-tools {
+  box-shadow: none;
+}
+.annotate-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--geo-annotate-bar-h);
+  padding: var(--space-2);
+  background: var(--sp-paper);
+  border: 1px solid var(--sp-border-strong);
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-popover);
+}
+.annotate-bump {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  height: var(--space-4);
+  margin-bottom: -1px;
+  padding: 0 var(--space-5);
+  color: var(--sp-text-muted);
+  background: var(--sp-paper);
+  border: 1px solid var(--sp-border-strong);
+  border-bottom: none;
+  border-radius: var(--radius-surface) var(--radius-surface) 0 0;
+}
+.annotate-bump:hover:not(:disabled) {
+  background: var(--sp-paper);
+  color: var(--sp-text);
+}
+.annotate-bump .chev {
+  transition: transform var(--sp-dur-fast) var(--sp-ease);
+}
+.annotate-bump[aria-expanded='false'] .chev {
+  transform: rotate(180deg);
+}
+.annotate-tools button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.annotate-tools > button,
+.annotate-pick > button {
+  height: var(--geo-control-h);
+  padding-block: 0;
+}
+.annotate-tools button.on {
+  color: var(--sp-invert-fg);
+  background: var(--sp-invert-bg);
+  border-color: var(--sp-invert-bg);
+}
+.annotate-pick {
+  position: relative;
+  flex: none;
+}
+.annotate-tools .annotate-pick > button.on,
+.annotate-tools .annotate-pick > button:hover:not(:disabled) {
+  color: var(--sp-text);
+  background: var(--sp-surface);
+  border-color: var(--sp-border-strong);
+}
+.annotate-pick-card {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  padding: var(--space-2);
+  box-shadow: var(--shadow-popover);
+}
+.annotate-pick-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.annotate-pick-row + .annotate-pick-row {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--sp-border);
+}
+.annotate-dot {
+  --mark-ink: var(--sp-annotate);
+  flex: none;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  background: var(--mark-ink);
+  border: 1px solid var(--sp-border-strong);
+  border-radius: var(--radius-circle);
+}
+.annotate-dot:hover:not(:disabled) {
+  background: var(--mark-ink);
+  border-color: var(--sp-text);
+}
+.annotate-inside {
+  min-height: 0;
+  padding: var(--space-1);
+}
+.annotate-dot[aria-pressed='true'],
+.annotate-inside[aria-pressed='true'] {
+  box-shadow:
+    0 0 0 2px var(--sp-paper),
+    0 0 0 3.5px var(--sp-text);
+}
+.annotate-inside[aria-pressed='true'],
+.annotate-inside:hover:not(:disabled) {
+  background: var(--sp-surface);
+}
+.annotate-swatch {
+  --mark-ink: var(--sp-annotate);
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex: none;
+  border: 2px solid var(--mark-ink);
+  border-radius: var(--radius-mark);
+}
+.annotate-swatch.wash {
+  background: color-mix(in srgb, var(--mark-ink) 18%, transparent);
+}
+.annotate-swatch.solid {
+  background: var(--mark-ink);
+}
+.annotate-dot.ink-annotate,
+.annotate-swatch.ink-annotate,
+.annotate-note.ink-annotate {
+  --mark-ink: var(--sp-annotate);
+}
+.annotate-dot.ink-amber,
+.annotate-swatch.ink-amber,
+.annotate-note.ink-amber {
+  --mark-ink: var(--sp-amber);
+}
+.annotate-dot.ink-green,
+.annotate-swatch.ink-green,
+.annotate-note.ink-green {
+  --mark-ink: var(--sp-green);
+}
+.annotate-dot.ink-purple,
+.annotate-swatch.ink-purple,
+.annotate-note.ink-purple {
+  --mark-ink: var(--sp-purple);
+}
+.annotate-split {
+  width: 1px;
+  align-self: stretch;
+  background: var(--sp-border);
+}
+.annotate-note {
+  position: absolute;
+  z-index: 1;
+  padding: var(--space-1) var(--space-2);
+  color: var(--mark-ink);
+  background: var(--sp-paper);
+  border: 2px solid var(--mark-ink);
+  border-radius: var(--radius-control);
+  font-family: var(--sp-font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: var(--leading-body);
+  white-space: pre;
+  overflow: hidden;
+  resize: none;
+  outline: none;
+}
+
+/* ---- Diagnostics panel ---- */
+.diag {
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: var(--z-diag);
+  max-width: min(720px, calc(100vw - var(--space-5)));
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--sp-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--sp-paper);
+  color: var(--sp-text);
+  font-family: var(--sp-font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+/* ---- Settings page ---- */
+.options {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-5);
+}
+.options h1 {
+  margin: 0 0 var(--space-5);
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.options .version {
+  margin-left: var(--space-2);
+  color: var(--sp-text-muted);
+  font-size: var(--text-md);
+  font-weight: 400;
+}
+.options h2 {
+  margin: var(--space-5) 0 var(--space-2);
+  color: var(--sp-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--sp-track-label);
+  text-transform: uppercase;
+}
+.options section + section {
+  margin-top: var(--space-4);
+}
+.options section {
+  border: 1px solid var(--sp-border-strong);
+  border-radius: var(--radius-surface);
+  background: var(--sp-paper);
+}
+.options section h2 {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) 0;
+}
+.options .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--sp-border);
+}
+.options section > .row:first-of-type {
+  border-top: none;
+}
+.options .row-name {
+  font-weight: 700;
+  font-size: var(--text-lg);
+}
+.options .row-help {
+  margin-top: var(--space-1);
+  color: var(--sp-text-muted);
+  font-size: var(--text-md);
+  line-height: 1.4;
+}
+.options kbd {
+  padding: 1px var(--space-1);
+  border: 1px solid var(--sp-border-strong);
+  border-radius: var(--radius-mark);
+  background: var(--sp-surface);
+  font-family: var(--sp-font-mono);
+  font-size: var(--text-xs);
+}
+.options label.row {
+  cursor: pointer;
+}
+.options input[type='checkbox'] {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--sp-blue);
+}
+.options .dots {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+.options .seg {
+  display: flex;
+  flex: none;
+}
+.options .seg button {
+  min-height: 0;
+  height: 28px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-md);
+  border-radius: 0;
+  margin-left: -1px;
+}
+.options .seg button:first-child {
+  border-radius: var(--radius-control) 0 0 var(--radius-control);
+  margin-left: 0;
+}
+.options .seg button:last-child {
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+}
+.options .seg button.on {
+  color: var(--sp-invert-fg);
+  background: var(--sp-invert-bg);
+  border-color: var(--sp-invert-bg);
+  z-index: 1;
+}
+.options footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.options .saved {
+  color: var(--sp-text-muted);
+  font-size: var(--text-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}

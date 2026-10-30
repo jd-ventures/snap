@@ -1,0 +1,7 @@
+Snap photographs the page you are on, lets you draw on it, and puts the finished picture on your clipboard. That is all it does.
+
+Press the toolbar button or Shift+Alt+S. The page is captured and the markup surface drops over it. Draw boxes, arrows and text notes in red, amber, green or purple. A box can be a ring, a wash, or solid. Every mark stays an object until you copy: click to pick it up, drag to move, pull a corner to resize, recolour, delete, undo. Press Copy, Enter or C and the picture is on your clipboard with the page's address drawn across the top, ready to paste into Slack, a document, a design tool or an issue.
+
+Nothing is uploaded anywhere. There is no account, no server and no tracking. The screenshot exists in the tab and on your clipboard, and nowhere else.
+
+Settings let you choose the theme, where the surface opens, what happens after copying, whether the address bar is drawn, and the starting ink.
