@@ -162,20 +162,39 @@ hand to people.
 ## Each later release
 
 The first version must be uploaded by hand (step 2): that creates the item
-and its id. Every version after that ships from GitHub Actions.
+and its id. Every version after that ships itself from `main`.
 
-**Actions → Deploy → Run workflow**, type the next version (e.g. `0.3.1`),
-run. `.github/workflows/deploy.yml` sets the version in both manifests,
-builds, runs the smoke test, uploads the zip, submits it for review, then
-commits the bump to `main` and tags `v<version>`. It runs on Blacksmith
-runners. `ci.yml` builds and smoke-tests every push and pull request.
+Write commit messages in Conventional Commits form. The prefix decides the
+next version, counted from the last `v<version>` tag:
 
-Versions must go up and be one to four dot-separated integers (`0.4.0`,
-`1.0`, `1.0.0.1`). No `-beta`, no letters.
+| commit | next version from 0.3.0 |
+|---|---|
+| `fix: …` or `perf: …` | 0.3.1 (patch) |
+| `feat: …` | 0.4.0 (minor) |
+| `feat!: …`, or a `BREAKING CHANGE:` line in the body | 1.0.0 (major) |
+| `chore:`, `docs:`, `ci:`, `refactor:`, `test:`, `style:`, `build:` | nothing ships |
+
+Several commits in one release take the biggest bump among them.
+
+`.github/workflows/deploy.yml` runs on every push to `main` and once a day
+(14:00 UTC). It works out the version (`scripts/next-version.mjs`), asks the
+store whether a version is still in review, and if one is, it stops and
+waits: the next push or the daily run ships everything that piled up, so
+nothing is lost and no review is restarted. Otherwise it sets the version in
+both manifests, builds, runs the smoke test, uploads, submits for review,
+commits `chore(release): <version>` to `main` and tags `v<version>`. Until
+the store credentials below are set, it does nothing and says so.
+
+To ship an exact version by hand: **Actions → Deploy → Run workflow** and
+type it. Versions must go up and be one to four dot-separated integers
+(`0.4.0`, `1.0`, `1.0.0.1`). No `-beta`, no letters.
+
+`ci.yml` builds and smoke-tests every push and pull request. Both run on
+Blacksmith runners.
 
 Manual fallback, if Actions is unavailable: `npm run release -- <version>`,
 then in the console **Package → Upload new package**, upload the zip,
-**Submit for review**, and commit the version bump yourself.
+**Submit for review**, commit the version bump, and tag it `v<version>`.
 
 ### How users get the update
 

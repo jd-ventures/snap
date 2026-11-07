@@ -1,20 +1,28 @@
-# Ships a new version to the Chrome Web Store.
+# Ships a new version to the Chrome Web Store whenever main has something
+# worth shipping.
 #
-# Actions → Deploy → Run workflow → type the next version (e.g. 0.3.1).
-# It sets the version in both manifests, builds, smoke-tests, uploads the
-# zip, submits it for review, then commits the bump and tags v<version>.
-# Google reviews it (hours to ~3 days); once approved, every installed copy
-# updates itself.
+# The version comes from the commits since the last v<version> tag
+# (scripts/next-version.mjs): feat → minor, fix/perf → patch, ! or
+# BREAKING CHANGE → major; chore, docs, ci and the like ship nothing.
 #
-# One-time setup is in HANDOFF.md, "Automated releases".
+# Google reviews every version. While one is still in review this run skips,
+# and the next push or the daily run ships everything that piled up.
+#
+# Runs on every push to main, once a day, and by hand (Actions → Deploy →
+# Run workflow, optionally with an exact version). One-time setup is in
+# HANDOFF.md, "Automated releases".
 name: Deploy
 
 on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
       version:
-        description: Next version, higher than the live one (e.g. 0.3.1)
-        required: true
+        description: Exact version to ship (leave empty to work it out from the commits)
+        required: false
 
 concurrency:
   group: deploy
@@ -27,44 +35,86 @@ jobs:
   deploy:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
-      VERSION: ${{ inputs.version }}
       PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
       EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+      HAS_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY != '' }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
-      - name: Check inputs
+      - name: Work out the version
+        id: plan
+        env:
+          REQUESTED: ${{ inputs.version }}
         run: |
+          if [ "$HAS_KEY" != "true" ] || [ -z "$PUBLISHER_ID" ] || [ -z "$EXTENSION_ID" ]; then
+            echo "::warning::Store credentials are not set up yet (HANDOFF.md, Automated releases); nothing shipped."
+            exit 0
+          fi
+          VERSION="${REQUESTED:-$(node scripts/next-version.mjs)}"
+          if [ -z "$VERSION" ]; then
+            echo "::notice::No feat or fix commits since the last release; nothing to ship."
+            exit 0
+          fi
           [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]] || { echo "::error::version must be 1–4 dot-separated integers, got $VERSION"; exit 1; }
-          [ -n "$PUBLISHER_ID" ] || { echo "::error::repo variable CWS_PUBLISHER_ID is not set"; exit 1; }
-          [ -n "$EXTENSION_ID" ] || { echo "::error::repo variable CWS_EXTENSION_ID is not set"; exit 1; }
-          git ls-remote --exit-code --tags origin "v$VERSION" >/dev/null && { echo "::error::tag v$VERSION already exists"; exit 1; } || true
-
-      - run: npm ci
-
-      - name: Install Chromium
-        run: |
-          npx playwright-core install --with-deps chromium
-          echo "CHROMIUM=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
-
-      # Sets the version, builds, runs the smoke test (CHROMIUM is set), zips.
-      - run: npm run release -- "$VERSION"
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::tag v$VERSION already exists"; exit 1
+          fi
+          echo "Next version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - id: auth
+        if: steps.plan.outputs.version != ''
         uses: google-github-actions/auth@v3
         with:
           credentials_json: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/chromewebstore
 
-      - name: Upload to the Chrome Web Store
+      # A version still in review blocks the next one. Wait rather than cancel
+      # it: cancelling restarts Google's review clock.
+      - name: Wait if a review is in progress
+        id: gate
+        if: steps.plan.outputs.version != ''
         env:
           TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          curl --fail-with-body -sS \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://chromewebstore.googleapis.com/v2/publishers/$PUBLISHER_ID/items/$EXTENSION_ID:fetchStatus" \
+            | tee status.json
+          echo
+          state=$(jq -r '.submittedItemRevisionStatus.state // empty' status.json)
+          if [ "$state" = "PENDING_REVIEW" ] || [ "$state" = "STAGED" ]; then
+            echo "::notice::A version is still in review ($state); ${{ steps.plan.outputs.version }} waits for the next push or the daily run."
+            exit 0
+          fi
+          echo "ship=true" >> "$GITHUB_OUTPUT"
+
+      - if: steps.gate.outputs.ship == 'true'
+        run: npm ci
+
+      - name: Install Chromium
+        if: steps.gate.outputs.ship == 'true'
+        run: |
+          npx playwright-core install --with-deps chromium
+          echo "CHROMIUM=$(node -e "console.log(require('playwright-core').chromium.executablePath())")" >> "$GITHUB_ENV"
+
+      # Sets the version, builds, runs the smoke test (CHROMIUM is set), zips.
+      - if: steps.gate.outputs.ship == 'true'
+        run: npm run release -- "${{ steps.plan.outputs.version }}"
+
+      - name: Upload to the Chrome Web Store
+        if: steps.gate.outputs.ship == 'true'
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+          VERSION: ${{ steps.plan.outputs.version }}
         run: |
           curl --fail-with-body -sS -X POST \
             -H "Authorization: Bearer $TOKEN" \
@@ -76,6 +126,7 @@ jobs:
           [ "$state" != "FAILED" ] || { echo "::error::upload refused; see the response above"; exit 1; }
 
       - name: Submit for review
+        if: steps.gate.outputs.ship == 'true'
         env:
           TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
@@ -84,15 +135,22 @@ jobs:
             "https://chromewebstore.googleapis.com/v2/publishers/$PUBLISHER_ID/items/$EXTENSION_ID:publish"
           echo
 
+      # Pushed with the workflow's own token, so it does not start another run.
       - name: Commit the version and tag it
+        if: steps.gate.outputs.ship == 'true'
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git commit -am "Release $VERSION"
+          git commit -am "chore(release): $VERSION"
+          git fetch origin main
+          git rebase origin/main
           git tag "v$VERSION"
-          git push origin HEAD "v$VERSION"
+          git push origin HEAD:main "v$VERSION"
 
       - uses: actions/upload-artifact@v6
+        if: steps.gate.outputs.ship == 'true'
         with:
-          name: snap-${{ inputs.version }}
-          path: release/snap-${{ inputs.version }}.zip
+          name: snap-${{ steps.plan.outputs.version }}
+          path: release/snap-${{ steps.plan.outputs.version }}.zip
